@@ -28,6 +28,7 @@ const droidRoutes = require('./routes/droidRoutes')
 const userRoutes = require('./routes/userRoutes')
 const azureOpenaiRoutes = require('./routes/azureOpenaiRoutes')
 const webhookRoutes = require('./routes/webhook')
+const bitableRoutes = require('./routes/bitable')
 
 // Import middleware
 const {
@@ -350,6 +351,8 @@ class Application {
         },
         apiRoutes
       )
+      // 🔗 飞书多维表格 Webhook（公开，无需认证）
+      this.app.use('/webhook/bitable', bitableRoutes)
       this.app.use('/admin', adminRoutes)
       this.app.use('/users', userRoutes)
       // 使用 web 路由（包含 auth 和页面重定向）
