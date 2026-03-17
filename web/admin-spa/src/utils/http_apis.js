@@ -349,3 +349,10 @@ export const getClaudeCodeVersionApi = () =>
   request({ url: '/admin/claude-code-version', method: 'GET' })
 export const clearClaudeCodeVersionApi = () =>
   request({ url: '/admin/claude-code-version/clear', method: 'POST' })
+
+// 飞书多维表格接入配置
+export const getBitableConfigApi = () => request({ url: '/admin/bitable-config', method: 'GET' })
+export const saveBitableConfigApi = (data) =>
+  request({ url: '/admin/bitable-config', method: 'PUT', data })
+export const testBitableConfigApi = (data) =>
+  request({ url: '/admin/bitable-config/test', method: 'POST', data })

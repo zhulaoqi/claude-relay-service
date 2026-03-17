@@ -15,6 +15,7 @@ const ApiKeyUsageRecordsView = () => import('@/views/ApiKeyUsageRecordsView.vue'
 const AccountsView = () => import('@/views/AccountsView.vue')
 const AccountUsageRecordsView = () => import('@/views/AccountUsageRecordsView.vue')
 const SettingsView = () => import('@/views/SettingsView.vue')
+const BitableConfigView = () => import('@/views/BitableConfigView.vue')
 const ApiStatsView = () => import('@/views/ApiStatsView.vue')
 const QuotaCardsView = () => import('@/views/QuotaCardsView.vue')
 
@@ -120,6 +121,19 @@ const routes = [
         path: '',
         name: 'AccountUsageRecords',
         component: AccountUsageRecordsView
+      }
+    ]
+  },
+  {
+    path: '/bitable-config',
+    component: MainLayout,
+    meta: { requiresAuth: true },
+    children: [
+      {
+        path: '',
+        name: 'BitableConfig',
+        component: BitableConfigView,
+        meta: { requiresAuth: true, title: '表格接入' }
       }
     ]
   },

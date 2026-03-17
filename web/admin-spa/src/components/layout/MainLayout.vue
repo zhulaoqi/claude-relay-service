@@ -40,6 +40,7 @@ const tabRouteMap = computed(() => {
     apiKeys: '/api-keys',
     accounts: '/accounts',
     quotaCards: '/quota-cards',
+    bitableConfig: '/bitable-config',
     settings: '/settings'
   }
 
@@ -68,6 +69,7 @@ const initActiveTab = () => {
       ApiKeys: 'apiKeys',
       Accounts: 'accounts',
       QuotaCards: 'quotaCards',
+      BitableConfig: 'bitableConfig',
       Settings: 'settings'
     }
     if (routeName && nameToTabMap[routeName]) {
@@ -98,6 +100,7 @@ watch(
         Accounts: 'accounts',
         QuotaCards: 'quotaCards',
         Tutorial: 'tutorial',
+        BitableConfig: 'bitableConfig',
         Settings: 'settings'
       }
       if (routeName && nameToTabMap[routeName]) {

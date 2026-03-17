@@ -70,6 +70,7 @@ const tabs = computed(() => {
     })
   }
 
+  baseTabs.push({ key: 'bitableConfig', name: '表格接入', shortName: '接入', icon: 'fas fa-table' })
   baseTabs.push({ key: 'settings', name: '系统设置', shortName: '设置', icon: 'fas fa-cogs' })
 
   return baseTabs
