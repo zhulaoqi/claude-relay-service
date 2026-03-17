@@ -43,7 +43,7 @@ describe('bitableService', () => {
 
     mockRedisClient = {
       get: jest.fn(),
-      setEx: jest.fn()
+      set: jest.fn()
     }
 
     const redis = require('../src/models/redis')
@@ -87,7 +87,7 @@ describe('bitableService', () => {
         .mockResolvedValueOnce({ data: { code: 0 } }) // admin message
       mockAxios.patch.mockResolvedValueOnce({ data: { code: 0 } }) // bitable write-back
 
-      mockRedisClient.setEx.mockResolvedValue('OK')
+      mockRedisClient.set.mockResolvedValue('OK')
 
       const row = {
         product: 'Claude Code',
@@ -144,7 +144,7 @@ describe('bitableService', () => {
       mockAxios.post
         .mockResolvedValueOnce({ data: { code: 0, tenant_access_token: 'tok' } })
         .mockResolvedValue({ data: { code: 0 } })
-      mockRedisClient.setEx.mockResolvedValue('OK')
+      mockRedisClient.set.mockResolvedValue('OK')
 
       const row = { recipientEmail: 'user@example.com' }
       const result = await service.createApiKeyFromBitableRow(row)
@@ -164,7 +164,7 @@ describe('bitableService', () => {
         .mockResolvedValueOnce({ data: { code: 0, tenant_access_token: 'token_abc' } })
         .mockResolvedValue({ data: { code: 0 } })
 
-      mockRedisClient.setEx.mockResolvedValue('OK')
+      mockRedisClient.set.mockResolvedValue('OK')
 
       const row = {
         product: 'Claude Code',
@@ -211,7 +211,7 @@ describe('bitableService', () => {
         .mockResolvedValueOnce({ data: { code: 0, tenant_access_token: 'tok' } })
         .mockRejectedValue(new Error('Network timeout'))
 
-      mockRedisClient.setEx.mockResolvedValue('OK')
+      mockRedisClient.set.mockResolvedValue('OK')
 
       const row = { recipientEmail: 'user@example.com' }
       const result = await service.createApiKeyFromBitableRow(row)
@@ -239,7 +239,7 @@ describe('bitableService', () => {
         .mockResolvedValueOnce({ data: { code: 0, tenant_access_token: 'tok' } })
         .mockResolvedValueOnce({ data: { code: 0 } }) // admin notification
 
-      mockRedisClient.setEx.mockResolvedValue('OK')
+      mockRedisClient.set.mockResolvedValue('OK')
 
       const row = {} // no recipientEmail
       const result = await service.createApiKeyFromBitableRow(row)

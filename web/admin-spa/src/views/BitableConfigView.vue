@@ -86,10 +86,13 @@
                     placeholder="点击「生成」自动生成随机密钥"
                     type="text"
                   />
-                  <button class="btn btn-primary shrink-0 text-sm" @click="generateSecret">
+                  <button class="btn btn-primary px-3 py-2 text-sm" @click="generateSecret">
                     <i class="fas fa-sync-alt mr-1" />生成
                   </button>
-                  <button class="btn shrink-0 text-sm" @click="copySecret">
+                  <button
+                    class="rounded-lg bg-gray-100 px-3 py-2 text-sm text-gray-600 transition-colors hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+                    @click="copySecret"
+                  >
                     <i class="fas fa-copy mr-1" />复制
                   </button>
                 </div>
@@ -211,10 +214,28 @@
                     "
                     :type="showSecret ? 'text' : 'password'"
                   />
-                  <button class="btn shrink-0" @click="showSecret = !showSecret">
+                  <button
+                    class="rounded-lg bg-gray-100 p-2 text-gray-600 transition-colors hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-400 dark:hover:bg-gray-600"
+                    @click="showSecret = !showSecret"
+                  >
                     <i :class="showSecret ? 'fas fa-eye-slash' : 'fas fa-eye'" />
                   </button>
                 </div>
+              </td>
+            </tr>
+            <tr>
+              <td class="py-4 pr-6 align-top">
+                <div class="text-sm font-semibold text-gray-700 dark:text-gray-200">管理员邮箱</div>
+                <div class="text-xs text-gray-500 dark:text-gray-400">
+                  每次创建 Key 时同步通知该邮箱（固定接收方）
+                </div>
+              </td>
+              <td class="py-4">
+                <input
+                  v-model="form.adminEmail"
+                  class="form-input max-w-md"
+                  placeholder="admin@company.com"
+                />
               </td>
             </tr>
             <tr>
@@ -223,27 +244,12 @@
                   默认收件人邮箱
                 </div>
                 <div class="text-xs text-gray-500 dark:text-gray-400">
-                  表格未填 recipientEmail 时使用
+                  表格未填工作邮箱时的兜底收件人
                 </div>
               </td>
               <td class="py-4">
                 <input
                   v-model="form.defaultRecipientEmail"
-                  class="form-input max-w-md"
-                  placeholder="admin@company.com"
-                />
-              </td>
-            </tr>
-            <tr>
-              <td class="py-4 pr-6 align-top">
-                <div class="text-sm font-semibold text-gray-700 dark:text-gray-200">管理员邮箱</div>
-                <div class="text-xs text-gray-500 dark:text-gray-400">
-                  每次创建 Key 时同步通知该邮箱
-                </div>
-              </td>
-              <td class="py-4">
-                <input
-                  v-model="form.adminEmail"
                   class="form-input max-w-md"
                   placeholder="admin@company.com"
                 />
@@ -277,7 +283,7 @@
                     placeholder="输入接收测试消息的飞书邮箱"
                   />
                   <button
-                    class="btn btn-primary shrink-0 text-sm"
+                    class="btn btn-primary px-4 py-2 text-sm"
                     :disabled="bitableStore.testing"
                     @click="handleTest"
                   >
@@ -294,24 +300,28 @@
 
     <!-- Tab: 接入说明 -->
     <div v-if="activeTab === 'guide'" class="space-y-4">
-      <div class="glass-strong space-y-5 rounded-xl p-5">
+      <div class="glass-strong space-y-6 rounded-xl p-5">
+        <!-- 步骤 1：字段映射 -->
         <div>
-          <h4 class="mb-2 text-sm font-semibold text-gray-700 dark:text-gray-200">
+          <h4 class="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-200">
             <span
               class="mr-2 inline-flex h-5 w-5 items-center justify-center rounded-full bg-[var(--primary-color)] text-xs text-white"
               >1</span
             >
-            飞书多维表格添加以下字段
+            飞书表格字段与 Webhook 字段对应关系
           </h4>
           <div class="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
             <table class="min-w-full text-xs">
               <thead class="bg-gray-50 dark:bg-gray-800">
                 <tr>
                   <th class="px-4 py-2 text-left font-medium text-gray-600 dark:text-gray-300">
-                    字段名
+                    飞书表格列名
                   </th>
                   <th class="px-4 py-2 text-left font-medium text-gray-600 dark:text-gray-300">
-                    类型
+                    JSON 字段名
+                  </th>
+                  <th class="px-4 py-2 text-left font-medium text-gray-600 dark:text-gray-300">
+                    必填
                   </th>
                   <th class="px-4 py-2 text-left font-medium text-gray-600 dark:text-gray-300">
                     说明
@@ -319,15 +329,25 @@
                 </tr>
               </thead>
               <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
-                <tr v-for="field in tableFields" :key="field.name">
-                  <td class="px-4 py-2 font-mono text-[var(--primary-color)]">{{ field.name }}</td>
-                  <td class="px-4 py-2 text-gray-600 dark:text-gray-300">{{ field.type }}</td>
+                <tr v-for="field in tableFields" :key="field.col">
+                  <td class="px-4 py-2 text-gray-700 dark:text-gray-200">{{ field.col }}</td>
+                  <td class="px-4 py-2 font-mono text-[var(--primary-color)]">{{ field.key }}</td>
+                  <td class="px-4 py-2">
+                    <span
+                      v-if="field.required"
+                      class="rounded-full bg-red-100 px-2 py-0.5 text-red-600 dark:bg-red-900/30 dark:text-red-400"
+                      >必填</span
+                    >
+                    <span v-else class="text-gray-400">可选</span>
+                  </td>
                   <td class="px-4 py-2 text-gray-500 dark:text-gray-400">{{ field.desc }}</td>
                 </tr>
               </tbody>
             </table>
           </div>
         </div>
+
+        <!-- 步骤 2：创建自动化 -->
         <div>
           <h4 class="mb-2 text-sm font-semibold text-gray-700 dark:text-gray-200">
             <span
@@ -336,11 +356,17 @@
             >
             创建自动化流程
           </h4>
-          <p class="text-xs text-gray-500 dark:text-gray-400">
-            多维表格 → 自动化 → 新建 → 触发条件选「添加记录时」，并勾选「name
-            字段不为空」，执行操作选「发送 HTTP 请求」。
+          <p class="text-xs leading-relaxed text-gray-500 dark:text-gray-400">
+            多维表格 → 自动化 → 新建 → 触发条件选
+            <strong class="text-gray-700 dark:text-gray-200">「添加记录时」</strong>，并勾选
+            <strong class="text-gray-700 dark:text-gray-200"
+              >「申请人工作邮箱不为空」且「申请产品不为空」</strong
+            >，执行操作选<strong class="text-gray-700 dark:text-gray-200">「发送 HTTP 请求」</strong
+            >。
           </p>
         </div>
+
+        <!-- 步骤 3：HTTP 请求配置 -->
         <div>
           <h4 class="mb-2 text-sm font-semibold text-gray-700 dark:text-gray-200">
             <span
@@ -357,7 +383,11 @@
             <div class="flex items-center gap-2">
               <span class="text-gray-500">URL：</span>
               <span class="break-all text-blue-600 dark:text-blue-400">{{ webhookUrl }}</span>
-              <button class="text-gray-400 hover:text-gray-600" @click="copyWebhookUrl">
+              <button
+                class="rounded p-0.5 text-gray-400 hover:text-gray-600"
+                title="复制"
+                @click="copyWebhookUrl"
+              >
                 <i class="fas fa-copy text-xs" />
               </button>
             </div>
@@ -373,25 +403,65 @@
                     ><span class="text-purple-600 dark:text-purple-400">X-Webhook-Secret</span>:
                     {{ maskedSecret }}</span
                   >
-                  <button class="text-gray-400 hover:text-gray-600" @click="copySecret">
+                  <button
+                    class="rounded p-0.5 text-gray-400 hover:text-gray-600"
+                    title="复制密钥"
+                    @click="copySecret"
+                  >
                     <i class="fas fa-copy text-xs" />
                   </button>
                 </div>
               </div>
             </div>
             <div>
-              <span class="text-gray-500">Body（JSON，引用表格字段）：</span>
+              <span class="text-gray-500">Body（JSON，每个值点击「插入变量」选对应字段）：</span>
               <pre class="mt-1 text-xs text-gray-700 dark:text-gray-300">{{ bodyExample }}</pre>
             </div>
           </div>
+        </div>
+
+        <!-- 步骤 4：appToken / tableId / recordId 获取方式 -->
+        <div>
+          <h4 class="mb-2 text-sm font-semibold text-gray-700 dark:text-gray-200">
+            <span
+              class="mr-2 inline-flex h-5 w-5 items-center justify-center rounded-full bg-[var(--primary-color)] text-xs text-white"
+              >4</span
+            >
+            如何获取 appToken / tableId / recordId
+          </h4>
+          <ul class="space-y-1 text-xs text-gray-500 dark:text-gray-400">
+            <li>
+              <span class="font-semibold text-gray-600 dark:text-gray-300">appToken</span>：多维表格
+              URL 中 <span class="font-mono">…/base/<strong>这段</strong>/table/…</span> 的值
+            </li>
+            <li>
+              <span class="font-semibold text-gray-600 dark:text-gray-300">tableId</span>：多维表格
+              URL 中 <span class="font-mono">…/table/<strong>这段</strong></span> 的值（tblXXX
+              开头）
+            </li>
+            <li>
+              <span class="font-semibold text-gray-600 dark:text-gray-300">recordId</span
+              >：在飞书自动化「发送 HTTP 请求」Body
+              里，点击「插入变量」→「当前记录」→「记录ID」即可引用
+            </li>
+          </ul>
         </div>
       </div>
     </div>
 
     <!-- Footer actions (not shown on guide tab) -->
     <div v-if="activeTab !== 'guide'" class="flex justify-end gap-3 pt-2">
-      <button class="btn text-sm" @click="resetForm">取消</button>
-      <button class="btn btn-primary text-sm" :disabled="bitableStore.saving" @click="handleSave">
+      <button
+        class="rounded-lg bg-gray-100 px-5 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+        @click="resetForm"
+      >
+        取消
+      </button>
+      <button
+        class="btn btn-primary px-5 py-2 text-sm"
+        :disabled="bitableStore.saving"
+        @click="handleSave"
+      >
         <i class="fas fa-save mr-1" />
         {{ bitableStore.saving ? '保存中...' : '保 存' }}
       </button>
@@ -417,17 +487,39 @@ const tabs = [
   { key: 'guide', label: '接入说明', icon: 'fas fa-book' }
 ]
 
+// Mapping from actual Feishu table column names to webhook JSON keys
 const tableFields = [
-  { name: 'product', type: '文本', desc: '申请产品，必须为 "Claude Code" 才会处理' },
-  { name: 'recipientEmail', type: '文本', desc: '申请人工作邮箱，必填；@ 前缀自动作为 Key 名称' },
-  { name: 'description', type: '文本', desc: '备注（可选）' },
-  { name: 'permissions', type: '多选', desc: 'claude/gemini/openai，空=全部' },
-  { name: 'concurrencyLimit', type: '数字', desc: '并发限制，0=不限（可选）' },
-  { name: 'dailyCostLimit', type: '数字', desc: '每日费用上限美元，0=不限（可选）' },
-  { name: 'expiresAt', type: '日期', desc: '过期时间，空=永久（可选）' },
-  { name: 'appToken', type: '文本', desc: '多维表格 App Token，用于回写开通情况（可选）' },
-  { name: 'tableId', type: '文本', desc: '数据表 Table ID，用于回写开通情况（可选）' },
-  { name: 'recordId', type: '文本', desc: '当前行 Record ID，用于回写开通情况（可选）' }
+  {
+    col: '申请产品',
+    key: 'product',
+    required: true,
+    desc: '必须为 "Claude Code" 才会处理，其他产品忽略'
+  },
+  {
+    col: '申请人工作邮箱',
+    key: 'recipientEmail',
+    required: true,
+    desc: '必填；@ 前缀自动作为 API Key 名称（如 abel.wang）'
+  },
+  { col: '用途', key: 'description', required: false, desc: 'Key 备注，可选' },
+  {
+    col: '（自动化系统变量）',
+    key: 'appToken',
+    required: false,
+    desc: '多维表格 App Token，用于回写开通情况'
+  },
+  {
+    col: '（自动化系统变量）',
+    key: 'tableId',
+    required: false,
+    desc: '数据表 Table ID，用于回写开通情况'
+  },
+  {
+    col: '（当前记录 → 记录ID）',
+    key: 'recordId',
+    required: false,
+    desc: '当前行 Record ID，用于回写开通情况和账号信息'
+  }
 ]
 
 const form = reactive({
@@ -453,12 +545,12 @@ const maskedSecret = computed(() => {
 const bodyExample = computed(() =>
   JSON.stringify(
     {
-      product: '{{申请产品字段}}',
-      recipientEmail: '{{申请人工作邮箱字段}}',
-      description: '{{用途字段}}',
-      appToken: '{{多维表格AppToken}}',
-      tableId: '{{数据表TableID}}',
-      recordId: '{{当前行RecordID}}'
+      product: '{{申请产品}}',
+      recipientEmail: '{{申请人工作邮箱}}',
+      description: '{{用途}}',
+      appToken: '{{当前多维表格 AppToken}}',
+      tableId: '{{当前数据表 TableID}}',
+      recordId: '{{当前记录 → 记录ID}}'
     },
     null,
     2

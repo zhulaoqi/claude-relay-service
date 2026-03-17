@@ -34,7 +34,7 @@ async function getFeishuToken() {
   }
 
   const token = data.tenant_access_token
-  await redis.getClient().setEx(TOKEN_CACHE_KEY, TOKEN_TTL_SECONDS, token)
+  await redis.getClient().set(TOKEN_CACHE_KEY, token, 'EX', TOKEN_TTL_SECONDS)
   return token
 }
 
