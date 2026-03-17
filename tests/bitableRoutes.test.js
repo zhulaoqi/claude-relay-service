@@ -35,7 +35,8 @@ const express = require('express')
 
 const bitableConfigService = require('../src/services/bitableConfigService')
 const bitableService = require('../src/services/bitableService')
-const axios = require('axios')
+const _axios = require('axios')
+const logger = require('../src/utils/logger')
 
 function buildApp() {
   const app = express()
@@ -128,6 +129,7 @@ describe('Public bitable webhook route', () => {
       .send({ name: 'Test Key' })
 
     expect(res.status).toBe(401)
+    expect(logger.security).toHaveBeenCalledTimes(1)
   })
 
   // Test 5: Missing name → 400

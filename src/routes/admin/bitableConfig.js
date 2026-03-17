@@ -43,21 +43,40 @@ router.put('/bitable-config', authenticateAdmin, async (req, res) => {
     } = req.body
 
     const updates = {}
-    if (enabled !== undefined) updates.enabled = enabled
-    if (webhookSecret !== undefined) updates.webhookSecret = webhookSecret
-    if (feishuAppId !== undefined) updates.feishuAppId = feishuAppId
+    if (enabled !== undefined) {
+      updates.enabled = enabled
+    }
+    if (webhookSecret !== undefined) {
+      updates.webhookSecret = webhookSecret
+    }
+    if (feishuAppId !== undefined) {
+      updates.feishuAppId = feishuAppId
+    }
     // Only update feishuAppSecret if a non-empty string is provided
     if (typeof feishuAppSecret === 'string' && feishuAppSecret !== '') {
       updates.feishuAppSecret = feishuAppSecret
     }
-    if (notifyOnSuccess !== undefined) updates.notifyOnSuccess = notifyOnSuccess
-    if (notifyOnFailure !== undefined) updates.notifyOnFailure = notifyOnFailure
-    if (defaultRecipientEmail !== undefined) updates.defaultRecipientEmail = defaultRecipientEmail
-    if (defaultPermissions !== undefined) updates.defaultPermissions = defaultPermissions
-    if (defaultConcurrencyLimit !== undefined)
+    if (notifyOnSuccess !== undefined) {
+      updates.notifyOnSuccess = notifyOnSuccess
+    }
+    if (notifyOnFailure !== undefined) {
+      updates.notifyOnFailure = notifyOnFailure
+    }
+    if (defaultRecipientEmail !== undefined) {
+      updates.defaultRecipientEmail = defaultRecipientEmail
+    }
+    if (defaultPermissions !== undefined) {
+      updates.defaultPermissions = defaultPermissions
+    }
+    if (defaultConcurrencyLimit !== undefined) {
       updates.defaultConcurrencyLimit = defaultConcurrencyLimit
-    if (defaultDailyCostLimit !== undefined) updates.defaultDailyCostLimit = defaultDailyCostLimit
-    if (defaultExpirationDays !== undefined) updates.defaultExpirationDays = defaultExpirationDays
+    }
+    if (defaultDailyCostLimit !== undefined) {
+      updates.defaultDailyCostLimit = defaultDailyCostLimit
+    }
+    if (defaultExpirationDays !== undefined) {
+      updates.defaultExpirationDays = defaultExpirationDays
+    }
 
     await bitableConfigService.saveConfig(updates)
     return res.json({ success: true, message: '配置已保存' })
