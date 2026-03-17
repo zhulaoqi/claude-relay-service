@@ -18,7 +18,8 @@ const DEFAULT_CONFIG = {
   defaultPermissions: [],
   defaultConcurrencyLimit: 0,
   defaultDailyCostLimit: 0,
-  defaultExpirationDays: 0
+  defaultExpirationDays: 0,
+  updatedAt: null
 }
 
 const getConfig = async () => {
@@ -30,6 +31,9 @@ const getConfig = async () => {
     const stored = JSON.parse(raw)
     if (stored.feishuAppSecret) {
       stored.feishuAppSecret = encryptor.decrypt(stored.feishuAppSecret)
+    }
+    if (stored.webhookSecret) {
+      stored.webhookSecret = encryptor.decrypt(stored.webhookSecret)
     }
     return { ...DEFAULT_CONFIG, ...stored }
   } catch (err) {
@@ -46,9 +50,16 @@ const saveConfig = async (updates) => {
     if (merged.feishuAppSecret) {
       merged.feishuAppSecret = encryptor.encrypt(merged.feishuAppSecret)
     }
+    if (merged.webhookSecret) {
+      merged.webhookSecret = encryptor.encrypt(merged.webhookSecret)
+    }
     await redis.getClient().set(REDIS_KEY, JSON.stringify(merged))
     logger.success('bitableConfigService saveConfig saved')
-    return { ...merged, feishuAppSecret: plainSecret }
+    return {
+      ...merged,
+      feishuAppSecret: plainSecret,
+      webhookSecret: updates.webhookSecret ?? current.webhookSecret ?? ''
+    }
   } catch (err) {
     logger.error('bitableConfigService saveConfig error', err)
     throw err

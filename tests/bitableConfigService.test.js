@@ -62,6 +62,7 @@ describe('bitableConfigService', () => {
       expect(config.defaultConcurrencyLimit).toBe(0)
       expect(config.defaultDailyCostLimit).toBe(0)
       expect(config.defaultExpirationDays).toBe(0)
+      expect(config.updatedAt).toBeNull()
     })
 
     it('decrypts feishuAppSecret when reading from Redis', async () => {
@@ -79,6 +80,18 @@ describe('bitableConfigService', () => {
       expect(config.enabled).toBe(true)
     })
 
+    it('decrypts webhookSecret when reading from Redis', async () => {
+      const stored = {
+        enabled: true,
+        webhookSecret: 'enc:mywebhooksecret'
+      }
+      mockRedisClient.get.mockResolvedValue(JSON.stringify(stored))
+
+      const config = await service.getConfig()
+
+      expect(config.webhookSecret).toBe('mywebhooksecret')
+    })
+
     it('returns defaults when Redis throws error', async () => {
       mockRedisClient.get.mockRejectedValue(new Error('Redis connection failed'))
 
@@ -88,7 +101,10 @@ describe('bitableConfigService', () => {
       expect(config.feishuAppSecret).toBe('')
 
       const logger = require('../src/utils/logger')
-      expect(logger.error).toHaveBeenCalled()
+      expect(logger.error).toHaveBeenCalledWith(
+        'bitableConfigService getConfig error',
+        expect.any(Error)
+      )
     })
   })
 
@@ -113,6 +129,22 @@ describe('bitableConfigService', () => {
       expect(result.feishuAppId).toBe('cli_test')
     })
 
+    it('encrypts webhookSecret before storing in Redis', async () => {
+      mockRedisClient.get.mockResolvedValue(null)
+      mockRedisClient.set.mockResolvedValue('OK')
+
+      const updates = { webhookSecret: 'mywebhooksecret' }
+
+      const result = await service.saveConfig(updates)
+
+      expect(mockRedisClient.set).toHaveBeenCalledTimes(1)
+      const storedJson = mockRedisClient.set.mock.calls[0][1]
+      const stored = JSON.parse(storedJson)
+      expect(stored.webhookSecret).toBe('enc:mywebhooksecret')
+
+      expect(result.webhookSecret).toBe('mywebhooksecret')
+    })
+
     it('does not encrypt empty feishuAppSecret', async () => {
       mockRedisClient.get.mockResolvedValue(null)
       mockRedisClient.set.mockResolvedValue('OK')
@@ -134,7 +166,10 @@ describe('bitableConfigService', () => {
       await expect(service.saveConfig({ feishuAppId: 'x' })).rejects.toThrow('Redis write error')
 
       const logger = require('../src/utils/logger')
-      expect(logger.error).toHaveBeenCalled()
+      expect(logger.error).toHaveBeenCalledWith(
+        'bitableConfigService saveConfig error',
+        expect.any(Error)
+      )
     })
   })
 })
