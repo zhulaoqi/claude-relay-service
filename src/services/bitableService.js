@@ -104,7 +104,7 @@ function buildCard(type, params) {
 
   return {
     msg_type: 'interactive',
-    card: JSON.stringify(card)
+    content: JSON.stringify(card)
   }
 }
 
