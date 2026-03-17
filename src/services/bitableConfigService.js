@@ -15,6 +15,7 @@ const DEFAULT_CONFIG = {
   notifyOnSuccess: true,
   notifyOnFailure: true,
   defaultRecipientEmail: '',
+  adminEmail: 'ricardo.zhang@eclicktech.com.cn',
   defaultPermissions: [],
   defaultConcurrencyLimit: 0,
   defaultDailyCostLimit: 0,

@@ -10,6 +10,7 @@ export const useBitableStore = defineStore('bitable', () => {
     feishuAppSecretConfigured: false,
     notifyOnSuccess: true,
     notifyOnFailure: true,
+    adminEmail: 'ricardo.zhang@eclicktech.com.cn',
     defaultRecipientEmail: '',
     defaultPermissions: [],
     defaultConcurrencyLimit: 0,

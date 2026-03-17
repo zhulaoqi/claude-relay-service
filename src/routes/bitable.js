@@ -26,10 +26,10 @@ router.post('/apikey-create', async (req, res) => {
       return res.status(401).json({ error: 'Invalid webhook secret' })
     }
 
-    // ④ Validate name field
+    // ④ Validate recipientEmail field (name is derived from it)
     const rowData = req.body
-    if (!rowData.name || typeof rowData.name !== 'string' || rowData.name.trim() === '') {
-      return res.status(400).json({ error: 'name is required' })
+    if (!rowData.recipientEmail || typeof rowData.recipientEmail !== 'string') {
+      return res.status(400).json({ error: 'recipientEmail is required' })
     }
 
     // ⑤ Create API key

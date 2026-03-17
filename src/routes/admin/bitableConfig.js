@@ -35,6 +35,7 @@ router.put('/bitable-config', authenticateAdmin, async (req, res) => {
       feishuAppSecret,
       notifyOnSuccess,
       notifyOnFailure,
+      adminEmail,
       defaultRecipientEmail,
       defaultPermissions,
       defaultConcurrencyLimit,
@@ -61,6 +62,9 @@ router.put('/bitable-config', authenticateAdmin, async (req, res) => {
     }
     if (notifyOnFailure !== undefined) {
       updates.notifyOnFailure = notifyOnFailure
+    }
+    if (adminEmail !== undefined) {
+      updates.adminEmail = adminEmail
     }
     if (defaultRecipientEmail !== undefined) {
       updates.defaultRecipientEmail = defaultRecipientEmail

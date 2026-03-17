@@ -126,14 +126,14 @@ describe('Public bitable webhook route', () => {
     const res = await request(app)
       .post('/bitable/apikey-create')
       .set('X-Webhook-Secret', 'wrong-secret')
-      .send({ name: 'Test Key' })
+      .send({ recipientEmail: 'user@example.com' })
 
     expect(res.status).toBe(401)
     expect(logger.security).toHaveBeenCalledTimes(1)
   })
 
-  // Test 5: Missing name → 400
-  it('POST /bitable/apikey-create with missing name returns 400', async () => {
+  // Test 5: Missing recipientEmail → 400
+  it('POST /bitable/apikey-create with missing recipientEmail returns 400', async () => {
     bitableConfigService.getConfig.mockResolvedValue({
       enabled: true,
       webhookSecret: 'correct-secret'
@@ -145,7 +145,7 @@ describe('Public bitable webhook route', () => {
       .send({})
 
     expect(res.status).toBe(400)
-    expect(res.body.error).toMatch(/name/)
+    expect(res.body.error).toMatch(/recipientEmail/)
   })
 
   // Test 6: Feature disabled → 503
@@ -158,7 +158,7 @@ describe('Public bitable webhook route', () => {
     const res = await request(app)
       .post('/bitable/apikey-create')
       .set('X-Webhook-Secret', 'correct-secret')
-      .send({ name: 'Test Key' })
+      .send({ recipientEmail: 'user@example.com' })
 
     expect(res.status).toBe(503)
   })
@@ -177,7 +177,7 @@ describe('Public bitable webhook route', () => {
     const res = await request(app)
       .post('/bitable/apikey-create')
       .set('X-Webhook-Secret', 'correct-secret')
-      .send({ name: 'My Test Key' })
+      .send({ recipientEmail: 'user@example.com', product: 'Claude Code' })
 
     expect(res.status).toBe(200)
     expect(res.body.success).toBe(true)
@@ -198,7 +198,7 @@ describe('Public bitable webhook route', () => {
     const res = await request(app)
       .post('/bitable/apikey-create')
       .set('X-Webhook-Secret', 'correct-secret')
-      .send({ name: 'My Test Key' })
+      .send({ recipientEmail: 'user@example.com', product: 'Claude Code' })
 
     expect(res.status).toBe(200)
     expect(res.body.success).toBe(false)

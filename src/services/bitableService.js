@@ -141,23 +141,84 @@ async function sendFeishuMessage(recipientEmail, card) {
 }
 
 /**
- * Create an API Key based on a Bitable row and notify the recipient via Feishu.
+ * Write fields back to a Feishu Bitable record.
+ * NEVER throws — all errors are logged as warnings.
+ * @param {string} appToken
+ * @param {string} tableId
+ * @param {string} recordId
+ * @param {object} fields
+ */
+async function updateBitableRecord(appToken, tableId, recordId, fields) {
+  try {
+    const token = await getFeishuToken()
+    const response = await axios.patch(
+      `${FEISHU_API_BASE}/bitable/v1/apps/${appToken}/tables/${tableId}/records/${recordId}`,
+      { fields },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        timeout: NOTIFY_TIMEOUT_MS
+      }
+    )
+
+    const { data } = response
+    if (data.code !== 0) {
+      logger.warn(`bitableService updateBitableRecord non-zero code: ${data.code} ${data.msg}`, {
+        appToken,
+        tableId,
+        recordId
+      })
+    } else {
+      logger.success('bitableService updateBitableRecord row updated', {
+        appToken,
+        tableId,
+        recordId
+      })
+    }
+  } catch (err) {
+    logger.warn('bitableService updateBitableRecord failed', {
+      error: err.message,
+      appToken,
+      tableId,
+      recordId
+    })
+  }
+}
+
+/**
+ * Create an API Key based on a Bitable row and notify recipients via Feishu.
+ *
  * @param {object} row
- * @param {string} row.name
+ * @param {string} [row.product]           申请产品 — only 'Claude Code' is processed
+ * @param {string} row.recipientEmail      申请人工作邮箱 (required); username part used as key name
  * @param {string} [row.description]
  * @param {Array}  [row.permissions]
  * @param {number} [row.concurrencyLimit]
  * @param {number} [row.dailyCostLimit]
  * @param {string} [row.expiresAt]
- * @param {string} [row.recipientEmail]
- * @returns {{ success: boolean, keyId?: string, error?: string }}
+ * @param {string} [row.appToken]          Bitable app token for write-back
+ * @param {string} [row.tableId]           Bitable table ID for write-back
+ * @param {string} [row.recordId]          Bitable record ID for write-back
+ * @returns {{ success: boolean, keyId?: string, skipped?: boolean, error?: string }}
  */
 async function createApiKeyFromBitableRow(row) {
   const config = await bitableConfigService.getConfig()
 
-  const recipientEmail = row.recipientEmail || config.defaultRecipientEmail || null
+  // ① Product filter: only process Claude Code rows
+  if (row.product && row.product !== 'Claude Code') {
+    logger.info('bitableService createApiKeyFromBitableRow skipped non-Claude-Code product', {
+      product: row.product
+    })
+    return { success: false, skipped: true, reason: `Product '${row.product}' is not supported` }
+  }
 
-  // Compute expiresAt: row value takes priority; fall back to config defaultExpirationDays
+  // ② Derive name from email username (e.g. abel.wang@eclicktech.com.cn → abel.wang)
+  const recipientEmail = row.recipientEmail || config.defaultRecipientEmail || null
+  const name = recipientEmail ? recipientEmail.split('@')[0] : row.name || 'unknown'
+
+  // ③ Compute expiresAt: row value takes priority; fall back to config defaultExpirationDays
   let expiresAt = row.expiresAt || null
   if (!expiresAt && config.defaultExpirationDays > 0) {
     const d = new Date()
@@ -166,7 +227,7 @@ async function createApiKeyFromBitableRow(row) {
   }
 
   const params = {
-    name: row.name,
+    name,
     description: row.description ?? '',
     permissions: row.permissions ?? config.defaultPermissions ?? [],
     concurrencyLimit: row.concurrencyLimit ?? config.defaultConcurrencyLimit ?? 0,
@@ -191,30 +252,47 @@ async function createApiKeyFromBitableRow(row) {
     })
   }
 
-  if (recipientEmail) {
-    const card =
-      keyData !== null
-        ? buildCard('success', {
-            name: params.name,
-            apiKey: keyData.apiKey,
-            permissions: params.permissions,
-            concurrencyLimit: params.concurrencyLimit,
-            dailyCostLimit: params.dailyCostLimit,
-            expiresAt
-          })
-        : buildCard('failure', {
-            name: params.name,
-            error: creationError ? creationError.message : 'Unknown error'
-          })
+  // ④ Build notification card (shared between both recipients)
+  const card =
+    keyData !== null
+      ? buildCard('success', {
+          name: params.name,
+          apiKey: keyData.apiKey,
+          permissions: params.permissions,
+          concurrencyLimit: params.concurrencyLimit,
+          dailyCostLimit: params.dailyCostLimit,
+          expiresAt
+        })
+      : buildCard('failure', {
+          name: params.name,
+          error: creationError ? creationError.message : 'Unknown error'
+        })
 
-    await sendFeishuMessage(recipientEmail, card)
+  // ⑤ Send notification to applicant + admin (deduped, fire-and-forget)
+  const shouldNotify = keyData !== null ? config.notifyOnSuccess : config.notifyOnFailure
+  const targets = new Set()
+  if (shouldNotify && recipientEmail) {
+    targets.add(recipientEmail)
+  }
+  const { adminEmail } = config
+  if (adminEmail) {
+    targets.add(adminEmail)
+  }
+
+  if (targets.size === 0) {
+    logger.warn('bitableService createApiKeyFromBitableRow no notification targets', {
+      name: params.name
+    })
   } else {
-    logger.warn(
-      'bitableService createApiKeyFromBitableRow no recipient email, skipping notification',
-      {
-        name: params.name
-      }
-    )
+    await Promise.all([...targets].map((email) => sendFeishuMessage(email, card)))
+  }
+
+  // ⑥ Write back to Bitable on success: mark 开通情况=true, 开通账号信息=apiKey
+  if (keyData !== null && row.appToken && row.tableId && row.recordId) {
+    await updateBitableRecord(row.appToken, row.tableId, row.recordId, {
+      开通情况: true,
+      开通账号信息: keyData.apiKey
+    })
   }
 
   if (keyData !== null) {
@@ -227,5 +305,6 @@ module.exports = {
   getFeishuToken,
   buildCard,
   sendFeishuMessage,
+  updateBitableRecord,
   createApiKeyFromBitableRow
 }

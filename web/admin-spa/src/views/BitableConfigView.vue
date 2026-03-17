@@ -236,16 +236,31 @@
             </tr>
             <tr>
               <td class="py-4 pr-6 align-top">
+                <div class="text-sm font-semibold text-gray-700 dark:text-gray-200">管理员邮箱</div>
+                <div class="text-xs text-gray-500 dark:text-gray-400">
+                  每次创建 Key 时同步通知该邮箱
+                </div>
+              </td>
+              <td class="py-4">
+                <input
+                  v-model="form.adminEmail"
+                  class="form-input max-w-md"
+                  placeholder="admin@company.com"
+                />
+              </td>
+            </tr>
+            <tr>
+              <td class="py-4 pr-6 align-top">
                 <div class="text-sm font-semibold text-gray-700 dark:text-gray-200">通知规则</div>
               </td>
               <td class="space-y-2 py-4">
                 <div class="flex items-center gap-3">
                   <el-switch v-model="form.notifyOnSuccess" />
-                  <span class="text-sm text-gray-600 dark:text-gray-300">创建成功时通知</span>
+                  <span class="text-sm text-gray-600 dark:text-gray-300">创建成功时通知申请人</span>
                 </div>
                 <div class="flex items-center gap-3">
                   <el-switch v-model="form.notifyOnFailure" />
-                  <span class="text-sm text-gray-600 dark:text-gray-300">创建失败时通知</span>
+                  <span class="text-sm text-gray-600 dark:text-gray-300">创建失败时通知申请人</span>
                 </div>
               </td>
             </tr>
@@ -403,13 +418,16 @@ const tabs = [
 ]
 
 const tableFields = [
-  { name: 'name', type: '文本', desc: 'Key 名称，必填' },
+  { name: 'product', type: '文本', desc: '申请产品，必须为 "Claude Code" 才会处理' },
+  { name: 'recipientEmail', type: '文本', desc: '申请人工作邮箱，必填；@ 前缀自动作为 Key 名称' },
   { name: 'description', type: '文本', desc: '备注（可选）' },
   { name: 'permissions', type: '多选', desc: 'claude/gemini/openai，空=全部' },
   { name: 'concurrencyLimit', type: '数字', desc: '并发限制，0=不限（可选）' },
   { name: 'dailyCostLimit', type: '数字', desc: '每日费用上限美元，0=不限（可选）' },
   { name: 'expiresAt', type: '日期', desc: '过期时间，空=永久（可选）' },
-  { name: 'recipientEmail', type: '文本', desc: '通知收件人飞书邮箱（可选，空用默认）' }
+  { name: 'appToken', type: '文本', desc: '多维表格 App Token，用于回写开通情况（可选）' },
+  { name: 'tableId', type: '文本', desc: '数据表 Table ID，用于回写开通情况（可选）' },
+  { name: 'recordId', type: '文本', desc: '当前行 Record ID，用于回写开通情况（可选）' }
 ]
 
 const form = reactive({
@@ -418,6 +436,7 @@ const form = reactive({
   feishuAppId: '',
   notifyOnSuccess: true,
   notifyOnFailure: true,
+  adminEmail: 'ricardo.zhang@eclicktech.com.cn',
   defaultRecipientEmail: '',
   defaultPermissions: [],
   defaultConcurrencyLimit: 0,
@@ -434,13 +453,12 @@ const maskedSecret = computed(() => {
 const bodyExample = computed(() =>
   JSON.stringify(
     {
-      name: '{{name字段}}',
-      description: '{{description字段}}',
-      permissions: '{{permissions字段}}',
-      concurrencyLimit: '{{concurrencyLimit字段}}',
-      dailyCostLimit: '{{dailyCostLimit字段}}',
-      expiresAt: '{{expiresAt字段}}',
-      recipientEmail: '{{recipientEmail字段}}'
+      product: '{{申请产品字段}}',
+      recipientEmail: '{{申请人工作邮箱字段}}',
+      description: '{{用途字段}}',
+      appToken: '{{多维表格AppToken}}',
+      tableId: '{{数据表TableID}}',
+      recordId: '{{当前行RecordID}}'
     },
     null,
     2
@@ -460,6 +478,7 @@ function syncFormFromStore() {
     feishuAppId: c.feishuAppId || '',
     notifyOnSuccess: c.notifyOnSuccess,
     notifyOnFailure: c.notifyOnFailure,
+    adminEmail: c.adminEmail || 'ricardo.zhang@eclicktech.com.cn',
     defaultRecipientEmail: c.defaultRecipientEmail || '',
     defaultPermissions: c.defaultPermissions || [],
     defaultConcurrencyLimit: c.defaultConcurrencyLimit || 0,
