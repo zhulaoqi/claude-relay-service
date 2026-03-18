@@ -288,7 +288,7 @@ describe('bitableService', () => {
   // ===================== Cursor mailbox tests =====================
 
   describe('createCursorMailbox - success case', () => {
-    it('creates public mailbox, adds member, notifies, and writes back', async () => {
+    it('creates public mailbox, adds member, notifies admin only, and writes back', async () => {
       mockRedisClient.get.mockResolvedValueOnce(null).mockResolvedValue('tok')
       mockAxios.post
         .mockResolvedValueOnce({ data: { code: 0, tenant_access_token: 'tok' } }) // token fetch
@@ -299,8 +299,7 @@ describe('bitableService', () => {
           }
         }) // create mailbox
         .mockResolvedValueOnce({ data: { code: 0, data: { member_id: 'm1' } } }) // add member
-        .mockResolvedValueOnce({ data: { code: 0 } }) // applicant notification
-        .mockResolvedValueOnce({ data: { code: 0 } }) // admin notification
+        .mockResolvedValueOnce({ data: { code: 0 } }) // admin notification only
       mockAxios.put.mockResolvedValueOnce({ data: { code: 0 } }) // bitable write-back
 
       mockRedisClient.set.mockResolvedValue('OK')
@@ -327,6 +326,11 @@ describe('bitableService', () => {
       const memberCall = mockAxios.post.mock.calls.find((c) => c[0].includes('/members'))
       expect(memberCall).toBeDefined()
 
+      // Only admin gets notification (not applicant)
+      const msgCalls = mockAxios.post.mock.calls.filter((c) => c[0].includes('/im/v1/messages'))
+      expect(msgCalls).toHaveLength(1)
+      expect(msgCalls[0][1].receive_id).toBe('admin@example.com')
+
       // Write-back
       expect(mockAxios.put).toHaveBeenCalledWith(
         expect.stringContaining('/bitable/v1/apps/at1/tables/tbl1/records/rec1'),
@@ -338,10 +342,11 @@ describe('bitableService', () => {
         expect.any(Object)
       )
 
-      // Write-back should contain IMAP hint
+      // Write-back should contain IMAP and password hint
       const writeBackFields = mockAxios.put.mock.calls[0][1].fields
       expect(writeBackFields['开通账号信息']).toContain('cursor-kinch.zhu@example.com')
       expect(writeBackFields['开通账号信息']).toContain('IMAP')
+      expect(writeBackFields['开通账号信息']).toContain('密码')
     })
   })
 
@@ -404,7 +409,7 @@ describe('bitableService', () => {
   })
 
   describe('createCursorMailbox - notification card content', () => {
-    it('success card contains public mailbox email and IMAP reminder', async () => {
+    it('success card contains public mailbox email, IMAP steps and password hint', async () => {
       mockRedisClient.get.mockResolvedValueOnce(null).mockResolvedValue('tok')
       mockAxios.post
         .mockResolvedValueOnce({ data: { code: 0, tenant_access_token: 'tok' } })
@@ -419,11 +424,12 @@ describe('bitableService', () => {
       await service.createCursorMailbox(row)
 
       const msgCalls = mockAxios.post.mock.calls.filter((c) => c[0].includes('/im/v1/messages'))
-      expect(msgCalls.length).toBeGreaterThan(0)
+      expect(msgCalls).toHaveLength(1)
 
       const cardContent = msgCalls[0][1].content
       expect(cardContent).toContain('cursor-user@example.com')
       expect(cardContent).toContain('IMAP')
+      expect(cardContent).toContain('生成专用密码')
     })
   })
 

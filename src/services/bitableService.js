@@ -273,7 +273,10 @@ function buildCursorCard(type, params) {
               `**公共邮箱：** \`${publicEmail}\``,
               `**创建时间：** ${time}`,
               '',
-              '> ⚠️ 需管理员在飞书管理后台 → 邮箱 → 公共邮箱 → 邮箱设置中开启 IMAP'
+              '> ⚠️ **后续手动操作：**',
+              '> 1. 管理后台 → 邮箱 → 公共邮箱 → 邮箱设置 → 开启 IMAP/SMTP',
+              '> 2. 飞书桌面客户端 → 邮箱设置 → 第三方邮箱客户端登录 → 生成专用密码',
+              '> 3. 将公共邮箱地址和专用密码提供给申请人'
             ].join('\n')
           }
         }
@@ -336,7 +339,6 @@ async function createCursorMailbox(row) {
   const [username, domain] = applicantEmail.split('@')
   const publicEmail = `cursor-${username}@${domain}`
   const displayName = `Cursor - ${username}`
-  const recipientEmail = row.recipientEmail || applicantEmail
 
   let mailboxData = null
   let creationError = null
@@ -393,21 +395,14 @@ async function createCursorMailbox(row) {
         })
 
   const shouldNotify = mailboxData !== null ? config.notifyOnSuccess : config.notifyOnFailure
-  const targets = new Set()
-  if (shouldNotify && recipientEmail) {
-    targets.add(recipientEmail)
-  }
-  if (config.adminEmail) {
-    targets.add(config.adminEmail)
-  }
-  if (targets.size > 0) {
-    await Promise.all([...targets].map((email) => sendFeishuMessage(email, card)))
+  if (shouldNotify && config.adminEmail) {
+    await sendFeishuMessage(config.adminEmail, card)
   }
 
   if (mailboxData !== null && row.appToken && row.tableId && row.recordId) {
     await updateBitableRecord(row.appToken, row.tableId, row.recordId, {
       开通情况: true,
-      开通账号信息: `${publicEmail}，需管理员在飞书管理后台开启IMAP`
+      开通账号信息: `${publicEmail}（需管理员开启IMAP并生成专用密码）`
     })
   }
 
