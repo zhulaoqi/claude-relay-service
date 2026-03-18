@@ -12,6 +12,8 @@ const DEFAULT_CONFIG = {
   webhookSecret: '',
   feishuAppId: '',
   feishuAppSecret: '',
+  bitableAppToken: '',
+  bitableTableId: '',
   notifyOnSuccess: true,
   notifyOnFailure: true,
   defaultRecipientEmail: '',
@@ -33,9 +35,6 @@ const getConfig = async () => {
     if (stored.feishuAppSecret) {
       stored.feishuAppSecret = encryptor.decrypt(stored.feishuAppSecret)
     }
-    if (stored.webhookSecret) {
-      stored.webhookSecret = encryptor.decrypt(stored.webhookSecret)
-    }
     return { ...DEFAULT_CONFIG, ...stored }
   } catch (err) {
     logger.error('bitableConfigService getConfig error', err)
@@ -51,15 +50,11 @@ const saveConfig = async (updates) => {
     if (merged.feishuAppSecret) {
       merged.feishuAppSecret = encryptor.encrypt(merged.feishuAppSecret)
     }
-    if (merged.webhookSecret) {
-      merged.webhookSecret = encryptor.encrypt(merged.webhookSecret)
-    }
     await redis.getClient().set(REDIS_KEY, JSON.stringify(merged))
     logger.success('bitableConfigService saveConfig saved')
     return {
       ...merged,
-      feishuAppSecret: plainSecret,
-      webhookSecret: updates.webhookSecret ?? current.webhookSecret ?? ''
+      feishuAppSecret: plainSecret
     }
   } catch (err) {
     logger.error('bitableConfigService saveConfig error', err)

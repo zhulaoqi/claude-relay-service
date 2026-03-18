@@ -19,8 +19,6 @@ jest.mock('../src/utils/commonHelper', () => ({
 describe('bitableConfigService', () => {
   let service
   let mockRedisClient
-  let mockEncrypt
-  let mockDecrypt
 
   beforeEach(() => {
     jest.resetModules()
@@ -33,10 +31,7 @@ describe('bitableConfigService', () => {
     const redis = require('../src/models/redis')
     redis.getClient.mockReturnValue(mockRedisClient)
 
-    const { createEncryptor } = require('../src/utils/commonHelper')
-    const encryptor = createEncryptor('bitable-app-secret')
-    mockEncrypt = encryptor.encrypt
-    mockDecrypt = encryptor.decrypt
+    require('../src/utils/commonHelper')
 
     service = require('../src/services/bitableConfigService')
   })
@@ -80,16 +75,16 @@ describe('bitableConfigService', () => {
       expect(config.enabled).toBe(true)
     })
 
-    it('decrypts webhookSecret when reading from Redis', async () => {
+    it('returns webhookSecret as plain text from Redis', async () => {
       const stored = {
         enabled: true,
-        webhookSecret: 'enc:mywebhooksecret'
+        webhookSecret: 'my-webhook-secret-123'
       }
       mockRedisClient.get.mockResolvedValue(JSON.stringify(stored))
 
       const config = await service.getConfig()
 
-      expect(config.webhookSecret).toBe('mywebhooksecret')
+      expect(config.webhookSecret).toBe('my-webhook-secret-123')
     })
 
     it('returns defaults when Redis throws error', async () => {
@@ -99,6 +94,7 @@ describe('bitableConfigService', () => {
 
       expect(config.enabled).toBe(false)
       expect(config.feishuAppSecret).toBe('')
+      expect(config.webhookSecret).toBe('')
 
       const logger = require('../src/utils/logger')
       expect(logger.error).toHaveBeenCalledWith(
@@ -129,20 +125,17 @@ describe('bitableConfigService', () => {
       expect(result.feishuAppId).toBe('cli_test')
     })
 
-    it('encrypts webhookSecret before storing in Redis', async () => {
+    it('stores webhookSecret as plain text in Redis', async () => {
       mockRedisClient.get.mockResolvedValue(null)
       mockRedisClient.set.mockResolvedValue('OK')
 
-      const updates = { webhookSecret: 'mywebhooksecret' }
+      const updates = { webhookSecret: 'ws-abc123' }
 
-      const result = await service.saveConfig(updates)
+      await service.saveConfig(updates)
 
-      expect(mockRedisClient.set).toHaveBeenCalledTimes(1)
       const storedJson = mockRedisClient.set.mock.calls[0][1]
       const stored = JSON.parse(storedJson)
-      expect(stored.webhookSecret).toBe('enc:mywebhooksecret')
-
-      expect(result.webhookSecret).toBe('mywebhooksecret')
+      expect(stored.webhookSecret).toBe('ws-abc123')
     })
 
     it('does not encrypt empty feishuAppSecret', async () => {

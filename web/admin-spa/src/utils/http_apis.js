@@ -356,3 +356,7 @@ export const saveBitableConfigApi = (data) =>
   request({ url: '/admin/bitable-config', method: 'PUT', data })
 export const testBitableConfigApi = (data) =>
   request({ url: '/admin/bitable-config/test', method: 'POST', data })
+export const getPendingRecordsApi = () =>
+  request({ url: '/admin/bitable-config/pending-records', method: 'GET' })
+export const activateRecordApi = (data) =>
+  request({ url: '/admin/bitable-config/activate', method: 'POST', data })

@@ -1,6 +1,12 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { getBitableConfigApi, saveBitableConfigApi, testBitableConfigApi } from '@/utils/http_apis'
+import {
+  getBitableConfigApi,
+  saveBitableConfigApi,
+  testBitableConfigApi,
+  getPendingRecordsApi,
+  activateRecordApi
+} from '@/utils/http_apis'
 
 export const useBitableStore = defineStore('bitable', () => {
   const config = ref({
@@ -8,6 +14,8 @@ export const useBitableStore = defineStore('bitable', () => {
     webhookSecret: '',
     feishuAppId: '',
     feishuAppSecretConfigured: false,
+    bitableAppToken: '',
+    bitableTableId: '',
     notifyOnSuccess: true,
     notifyOnFailure: true,
     adminEmail: 'ricardo.zhang@eclicktech.com.cn',
@@ -20,6 +28,8 @@ export const useBitableStore = defineStore('bitable', () => {
   const loading = ref(false)
   const saving = ref(false)
   const testing = ref(false)
+  const pendingRecords = ref([])
+  const loadingPending = ref(false)
 
   async function fetchConfig() {
     loading.value = true
@@ -66,14 +76,36 @@ export const useBitableStore = defineStore('bitable', () => {
       .join('')
   }
 
+  async function fetchPendingRecords() {
+    loadingPending.value = true
+    try {
+      const res = await getPendingRecordsApi()
+      if (res.success) {
+        pendingRecords.value = res.data || []
+      }
+      return res
+    } finally {
+      loadingPending.value = false
+    }
+  }
+
+  async function activateRecord(recordId, email, product) {
+    const res = await activateRecordApi({ recordId, email, product })
+    return res
+  }
+
   return {
     config,
     loading,
     saving,
     testing,
+    pendingRecords,
+    loadingPending,
     fetchConfig,
     saveConfig,
     testConnection,
-    generateWebhookSecret
+    generateWebhookSecret,
+    fetchPendingRecords,
+    activateRecord
   }
 })
